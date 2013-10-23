@@ -37,6 +37,7 @@ import edu.iastate.flagquizgame.R;
 
 public class FlagQuizGame extends Activity 
 {
+	// TESTINGGGGG
    // String used when logging error messages
    private static final String TAG = "FlagQuizGame Activity";
    
