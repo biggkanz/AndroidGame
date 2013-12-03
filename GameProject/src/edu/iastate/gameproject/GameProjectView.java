@@ -40,23 +40,20 @@ public class GameProjectView extends View
    private int playerHealth;
    private int monsterHealth;
    
-   private int spotsTouched; // number of spots touched
-   private int score; // current score
-   private int level; // current level
+//   private int spotsTouched; // number of spots touched
+//   private int score; // current score
+//   private int level; // current level
    private int viewWidth; // stores the width of this View
    private int viewHeight; // stores the height of this view
-   private boolean gameOver; // whether the game has ended
+//   private boolean gameOver; // whether the game has ended
    private boolean gamePaused; // whether the game has ended
    private boolean dialogDisplayed; // whether the game has ended
-   private int highScore; // the game's all time high score
-   
+//   private int highScore; // the game's all time high score
+//   
    // collections of spots (ImageViews) and Animators 
-   private final Queue<ImageView> monsters =
-	  new ConcurrentLinkedQueue<ImageView>();
-   private final Queue<ImageView> images = 
-      new ConcurrentLinkedQueue<ImageView>(); 
-   private final Queue<Animator> animators = 
-      new ConcurrentLinkedQueue<Animator>(); 
+   private final Queue<ImageView> monsters = new ConcurrentLinkedQueue<ImageView>();
+   private final Queue<ImageView> images = new ConcurrentLinkedQueue<ImageView>(); 
+   private final Queue<Animator> animators =  new ConcurrentLinkedQueue<Animator>(); 
    
    private TextView highScoreTextView; // displays high score
    private TextView currentScoreTextView; // displays current score
@@ -109,7 +106,7 @@ public class GameProjectView extends View
       
       // load the high score
       preferences = sharedPreferences;
-      highScore = preferences.getInt(HIGH_SCORE, 0);
+//      highScore = preferences.getInt(HIGH_SCORE, 0);
 
       // save Resources for loading external values
       resources = context.getResources();
@@ -188,11 +185,11 @@ public class GameProjectView extends View
       images.clear(); // empty the List of spots
       animators.clear(); // empty the List of Animators
       livesLinearLayout.removeAllViews(); // clear old lives from screen
-      
-      spotsTouched = 0; // reset the number of spots touched
-      score = 0; // reset the score
-      level = 1; // reset the level
-      gameOver = false; // the game is not over
+//      
+//      spotsTouched = 0; // reset the number of spots touched
+//      score = 0; // reset the score
+//      level = 1; // reset the level
+//      gameOver = false; // the game is not over
       displayScores(); // display scores and level      
       
    } 
@@ -230,7 +227,7 @@ public class GameProjectView extends View
       currentScoreTextView.setText(
          resources.getString(R.string.player_health) + " " + playerHealth);
       levelTextView.setText(
-         resources.getString(R.string.level) + " " + level);
+         resources.getString(R.string.level) + " " + "1");
    } // end function displayScores
 
    // Runnable used to add new spots to the game at the start
@@ -257,7 +254,7 @@ public class GameProjectView extends View
 	   images.add(spot);
 	   spot.setLayoutParams(new RelativeLayout.LayoutParams(
 		         MONSTER_DIAMETER, MONSTER_DIAMETER));
-	   spot.setImageResource(R.drawable.cthulu);
+	   spot.setImageResource(R.drawable.oldones);
 	   
 	   spot.setX(x); // set spot's starting x location
 	   spot.setY(y); // set spot's starting y location
@@ -319,7 +316,7 @@ public class GameProjectView extends View
       monster.setLayoutParams(new RelativeLayout.LayoutParams(
          MONSTER_DIAMETER, MONSTER_DIAMETER));      
       
-      monster.setImageResource(R.drawable.cthulu);	  
+      monster.setImageResource(R.drawable.oldones);	  
       
       monster.setOnClickListener( // listens for spot being clicked
          new OnClickListener()
@@ -446,60 +443,60 @@ public class GameProjectView extends View
    
 
    // called when a spot finishes its animation without being touched
-   public void missedSpot(ImageView spot)
-   {      
-      images.remove(spot); // remove spot from spots List
-      relativeLayout.removeView(spot); // remove spot from screen
-      
-      if (gameOver) // if the game is already over, exit
-         return;
-
-      // play the disappear sound effect
-      if (soundPool != null)
-         soundPool.play(DISAPPEAR_SOUND_ID, volume, volume, 
-            SOUND_PRIORITY, 0, 1f);
-
-      // if the game has been lost
-      if (livesLinearLayout.getChildCount() == 0)
-      {
-         gameOver = true; // the game is over
-
-         // if the last game's score is greater than the high score
-         if (score > highScore)
-         {
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putInt(HIGH_SCORE, score);
-            editor.commit(); // store the new high score
-            highScore = score;
-         } // end if
-
-         cancelAnimations();
-            
-         // display a high score dialog
-         Builder dialogBuilder = new AlertDialog.Builder(getContext());
-         dialogBuilder.setTitle(R.string.game_over);
-         dialogBuilder.setMessage(resources.getString(R.string.score) +
-            " " + score);
-         dialogBuilder.setPositiveButton(R.string.reset_game,
-            new DialogInterface.OnClickListener()
-            {
-               public void onClick(DialogInterface dialog, int which)
-               { 
-                  displayScores(); // ensure that score is up to date
-                  dialogDisplayed = false;
-                  resetGame(); // start a new game
-               } // end method onClick
-            } // end DialogInterface
-         ); // end call to dialogBuilder.setPositiveButton
-         dialogDisplayed = true;
-         dialogBuilder.show(); // display the reset game dialog
-      } // end if
-      else // remove one life   
-      {
-         livesLinearLayout.removeViewAt( // remove life from screen
-            livesLinearLayout.getChildCount() - 1); 
-         addNewMonster(); // add another spot to game
-      } // end else
-   } // end method missedSpot
+//   public void missedSpot(ImageView spot)
+//   {      
+//      images.remove(spot); // remove spot from spots List
+//      relativeLayout.removeView(spot); // remove spot from screen
+//      
+//      if (gameOver) // if the game is already over, exit
+//         return;
+//
+//      // play the disappear sound effect
+//      if (soundPool != null)
+//         soundPool.play(DISAPPEAR_SOUND_ID, volume, volume, 
+//            SOUND_PRIORITY, 0, 1f);
+//
+//      // if the game has been lost
+//      if (livesLinearLayout.getChildCount() == 0)
+//      {
+//         gameOver = true; // the game is over
+//
+//         // if the last game's score is greater than the high score
+//         if (score > highScore)
+//         {
+//            SharedPreferences.Editor editor = preferences.edit();
+//            editor.putInt(HIGH_SCORE, score);
+//            editor.commit(); // store the new high score
+//            highScore = score;
+//         } // end if
+//
+//         cancelAnimations();
+//            
+//         // display a high score dialog
+//         Builder dialogBuilder = new AlertDialog.Builder(getContext());
+//         dialogBuilder.setTitle(R.string.game_over);
+//         dialogBuilder.setMessage(resources.getString(R.string.score) +
+//            " " + score);
+//         dialogBuilder.setPositiveButton(R.string.reset_game,
+//            new DialogInterface.OnClickListener()
+//            {
+//               public void onClick(DialogInterface dialog, int which)
+//               { 
+//                  displayScores(); // ensure that score is up to date
+//                  dialogDisplayed = false;
+//                  resetGame(); // start a new game
+//               } // end method onClick
+//            } // end DialogInterface
+//         ); // end call to dialogBuilder.setPositiveButton
+//         dialogDisplayed = true;
+//         dialogBuilder.show(); // display the reset game dialog
+//      } // end if
+//      else // remove one life   
+//      {
+//         livesLinearLayout.removeViewAt( // remove life from screen
+//            livesLinearLayout.getChildCount() - 1); 
+//         addNewMonster(); // add another spot to game
+//      } // end else
+//   } // end method missedSpot
 } // end class SpotOnView
 
