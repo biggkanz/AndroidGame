@@ -6,4 +6,6 @@
     <string name="level">Level: </string>
     <string name="reset_game">Reset Game</string>
     <string name="game_over">Game Over</string>
+    <string name="monster_health">Monster Health: </string>
+    <string name="player_health">Player Health: </string>
 </resources>

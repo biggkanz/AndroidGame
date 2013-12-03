@@ -37,19 +37,23 @@ public class GameProjectView extends View
    private SharedPreferences preferences; // stores the high score
 
    // variables for managing the game
+   private int playerHealth;
+   private int monsterHealth;
+   
    private int spotsTouched; // number of spots touched
    private int score; // current score
    private int level; // current level
    private int viewWidth; // stores the width of this View
    private int viewHeight; // stores the height of this view
-   private long animationTime; // how long each spot remains on the screen
    private boolean gameOver; // whether the game has ended
    private boolean gamePaused; // whether the game has ended
    private boolean dialogDisplayed; // whether the game has ended
    private int highScore; // the game's all time high score
    
    // collections of spots (ImageViews) and Animators 
-   private final Queue<ImageView> spots = 
+   private final Queue<ImageView> monsters =
+	  new ConcurrentLinkedQueue<ImageView>();
+   private final Queue<ImageView> images = 
       new ConcurrentLinkedQueue<ImageView>(); 
    private final Queue<Animator> animators = 
       new ConcurrentLinkedQueue<Animator>(); 
@@ -62,22 +66,25 @@ public class GameProjectView extends View
    private Resources resources; // used to load resources
    private LayoutInflater layoutInflater; // used to inflate GUIs
 
-   // time in milliseconds for spot and touched spot animations
-   private static final int INITIAL_ANIMATION_DURATION = 6000;
+   // time in milliseconds for animations
+   private static final int MONSTER_ARRIVE_ANIMATION_DURATION = 2000;
+   private static final int FIREBALL_ANIMATION_DURATION = 500;   
+   
    private static final Random random = new Random(); // for random coords
-   private static final int SPOT_DIAMETER = 100; // initial spot size
-   private static final float SCALE_X = 0.25f; // end animation x scale
-   private static final float SCALE_Y = 0.25f; // end animation y scale
    
-   //
-   // 
-   //CHANGED TO ONE SPOT !!!!
-   private static final int INITIAL_SPOTS = 1; // initial # of spots   
+   private static final float FIREBALL_SCALE_X = .25f; // end animation x scale
+   private static final float FIREBALL_SCALE_Y = .25f; // end animation y scale
+   private static final float FIREBALL_SCALE_X_START = 2.00f; // beginning animation x scale
+   private static final float FIREBALL_SCALE_Y_START = 2.00f; // beginning animation y scale
+   private static final int FIREBALL_DAMAGE = 10; // the amount of damage a fireball does
    
-   private static final int SPOT_DELAY = 500; // delay in milliseconds
-   private static final int LIVES = 3; // start with 3 lives   
-   private static final int MAX_LIVES = 7; // maximum # of total lives
-   private static final int NEW_LEVEL = 10; // spots to reach new level
+   
+   private static final int MONSTER_DIAMETER = 100; // size of monster for detecting touch events
+   private static final float MONSTER_SCALE_X = 2.00f; // end animation x scale
+   private static final float MONSTER_SCALE_Y = 2.00f; // end animation y scale
+   private static final float MONSTER_SCALE_X_START = .25f; // beginning animation x scale
+   private static final float MOSNTER_SCALE_Y_START = .25f; // beginning animation y scale
+      
    private Handler spotHandler; // adds new spots to the game 
 
    // sound IDs, constants and variables for the game's sounds
@@ -96,6 +103,9 @@ public class GameProjectView extends View
       RelativeLayout parentLayout)
    {
       super(context);
+      
+      monsterHealth = 100;
+      playerHealth = 100;
       
       // load the high score
       preferences = sharedPreferences;
@@ -146,15 +156,20 @@ public class GameProjectView extends View
       for (Animator animator : animators)
          animator.cancel();
 
+      // remove images from the screen
+      for (ImageView view : images)
+         relativeLayout.removeView(view);
       
-
-      // remove remaining spots from the screen
-      for (ImageView view : spots)
+      // remove monsters from the screen
+      for (ImageView view : monsters)
          relativeLayout.removeView(view);
 
-      spotHandler.removeCallbacks(addSpotRunnable);
+      spotHandler.removeCallbacks(addMonsterRunnable);
+      spotHandler.removeCallbacks(addFireballRunnable);
+      
       animators.clear();
-      spots.clear();
+      monsters.clear();
+      images.clear();
    } // end method cancelAnimations
    
    // called by the SpotOn Activity when it receives a call to onResume
@@ -170,29 +185,17 @@ public class GameProjectView extends View
    // start a new game
    public void resetGame()
    {
-      spots.clear(); // empty the List of spots
+      images.clear(); // empty the List of spots
       animators.clear(); // empty the List of Animators
       livesLinearLayout.removeAllViews(); // clear old lives from screen
       
-      animationTime = INITIAL_ANIMATION_DURATION; // init animation length
       spotsTouched = 0; // reset the number of spots touched
       score = 0; // reset the score
       level = 1; // reset the level
       gameOver = false; // the game is not over
-      displayScores(); // display scores and level
+      displayScores(); // display scores and level      
       
-      // add lives 
-      for (int i = 0; i < LIVES; i++)
-      {
-         // add life indicator to screen
-         livesLinearLayout.addView(
-            (ImageView) layoutInflater.inflate(R.layout.life, null));
-      } // end for
-
-      // add INITIAL_SPOTS new spots at SPOT_DELAY time intervals in ms
-      for (int i = 1; i <= INITIAL_SPOTS; ++i)
-         spotHandler.postDelayed(addSpotRunnable, i * SPOT_DELAY);
-   } // end method resetGame
+   } 
 
    // create the app's SoundPool for playing game audio
    private void initializeSoundEffects(Context context)
@@ -223,151 +226,130 @@ public class GameProjectView extends View
    {
       // display the high score, current score and level
       highScoreTextView.setText(
-         resources.getString(R.string.high_score) + " " + highScore);
+         resources.getString(R.string.monster_health) + " " + monsterHealth);
       currentScoreTextView.setText(
-         resources.getString(R.string.score) + " " + score);
+         resources.getString(R.string.player_health) + " " + playerHealth);
       levelTextView.setText(
          resources.getString(R.string.level) + " " + level);
    } // end function displayScores
 
    // Runnable used to add new spots to the game at the start
-   private Runnable addSpotRunnable = new Runnable()
+   private Runnable addMonsterRunnable = new Runnable()
    {
-      public void run()
-      {
-         addNewSpot(); // add a new spot to the game
-      } // end method run
-   }; // end Runnable
-
-   // adds a new spot at a random location and starts its animation
+	      public void run()
+	      {
+	         addNewMonster(); // add a new monster
+	      } 
+   }; 
    
+   private Runnable addFireballRunnable = new Runnable()
+   {
+	   public void run()
+	      {
+	         addNewFireball(); 
+	      } 
+   };
+
+    
    public void addNewSpot(int x, int y)
    {
 	   final ImageView spot = (ImageView) layoutInflater.inflate(R.layout.untouched, null);
-	   spots.add(spot);
+	   images.add(spot);
 	   spot.setLayoutParams(new RelativeLayout.LayoutParams(
-		         SPOT_DIAMETER, SPOT_DIAMETER));
+		         MONSTER_DIAMETER, MONSTER_DIAMETER));
 	   spot.setImageResource(R.drawable.cthulu);
 	   
 	   spot.setX(x); // set spot's starting x location
-	      spot.setY(y); // set spot's starting y location
-	      spot.setOnClickListener( // listens for spot being clicked
-	         new OnClickListener()
-	         {            
-	            public void onClick(View v)
-	            {
-	               touchedSpot(spot); // handle touched spot
-	            } // end method onClick
-	         } // end OnClickListener 
-	      ); // end call to setOnClickListener 
-	      relativeLayout.addView(spot); // add spot to the screen
-   }
-   
-   public void addNewSpot()
-   {
-	   
-	   // put it in the MIDDLE
-	   // -BIGGSKANZ
-       // choose two random coordinates for the starting and ending points
-	   //      int x = random.nextInt(viewWidth - SPOT_DIAMETER);
-	   //      int y = random.nextInt(viewHeight - SPOT_DIAMETER);
-	   //      int x2 = random.nextInt(viewWidth - SPOT_DIAMETER);
-	   //      int y2 = random.nextInt(viewHeight - SPOT_DIAMETER);
-	   //
-	   //
-      
-      int x = random.nextInt(viewWidth / 2);
-      int y = random.nextInt(viewHeight / 2);
-      //int x2 = x;
-      //int y2 = y;
-      
-      
-
-      // create new spot
-      final ImageView spot =
-         (ImageView) layoutInflater.inflate(R.layout.untouched, null);
-      
-      spots.add(spot); // add the new spot to our list of spots
-      spot.setLayoutParams(new RelativeLayout.LayoutParams(
-         SPOT_DIAMETER, SPOT_DIAMETER));
-      
-      // I CHANGED THIS TO SHOW A PICTURE OF CTULHU
-      // -BIGGSKANZ
-      //
-      spot.setImageResource(R.drawable.cthulu);
-      // spot.setImageResource(random.nextInt(2) == 0 ?
-      // R.drawable.green_spot : R.drawable.red_spot);
-      //
-	  
-      
-      spot.setX(x); // set spot's starting x location
-      spot.setY(y); // set spot's starting y location
-      spot.setOnClickListener( // listens for spot being clicked
+	   spot.setY(y); // set spot's starting y location
+	   spot.setOnClickListener( // listens for spot being clicked
          new OnClickListener()
          {            
             public void onClick(View v)
             {
-               touchedSpot(spot); // handle touched spot
+               touchedMonster(spot); // handle touched spot
             } // end method onClick
          } // end OnClickListener 
       ); // end call to setOnClickListener 
       relativeLayout.addView(spot); // add spot to the screen
+   }
+   
+   public void addNewFireball()
+   {
+	   	int x = viewWidth / 2 - MONSTER_DIAMETER / 2;
+	    int y = viewHeight / 2 - MONSTER_DIAMETER / 2;
+	      
+	      // create new fireball
+	      final ImageView fireball =
+	         (ImageView) layoutInflater.inflate(R.layout.untouched, null);
+	      
+	      
+	      images.add(fireball); // add the new spot to our list of spots
+	      relativeLayout.addView(fireball); // add spot to the screen
+	      
+	      
+	      fireball.setLayoutParams(new RelativeLayout.LayoutParams(
+	         MONSTER_DIAMETER, MONSTER_DIAMETER));      
+	      
+	      fireball.setImageResource(R.drawable.fireball);	 	      
+	      
+	      // fireball starts at bottom center of the screen
+		  fireball.setX(viewWidth / 2); // set spot's starting x location
+		  fireball.setY(viewHeight); // set spot's starting y location
+		  fireball.setScaleX(FIREBALL_SCALE_X_START);
+		  fireball.setScaleY(FIREBALL_SCALE_Y_START);
 
-      //
-      // RIDICULOUS INNER CLASS DOES THE WHOLE ANIMATION!
-      // -BIGGSKANZ
-      //
-      //
-      // configure and start spot's animation
-//      spot.animate().x(x2).y(y2).scaleX(SCALE_X).scaleY(SCALE_Y)
-//         .setDuration(animationTime).setListener(
-//            new AnimatorListenerAdapter()
-//            {
-//               @Override
-//               public void onAnimationStart(Animator animation)
-//               {
-//                  animators.add(animation); // save for possible cancel
-//               } // end method onAnimationStart
-//
-//               public void onAnimationEnd(Animator animation)
-//               {
-//                  animators.remove(animation); // animation done, remove
-//                  
-//                  if (!gamePaused && spots.contains(spot)) // not touched
-//                  {
-//                     missedSpot(spot); // lose a life
-//                  } // end if
-//               } // end method onAnimationEnd
-//            } // end AnimatorListenerAdapter
-//         ); // end call to setListener
-      spot.animate().x(x + 86).y(y + 0).setDuration(animationTime).setListener(
-    		  new SpotAnimatorListenerAdapter(spot)); // end call to setListener
+		  fireball.animate().x(x).y(y).scaleX(FIREBALL_SCALE_X).scaleY(FIREBALL_SCALE_Y).setDuration(FIREBALL_ANIMATION_DURATION)
+	     	.setListener(new FireballAnimatorListenerAdapter(fireball)); 
+   }
+   
+   public void addNewMonster()
+   {      
+      int x = viewWidth / 2 - MONSTER_DIAMETER / 2;
+      int y = viewHeight / 2 - MONSTER_DIAMETER / 2;
+      
+      // create new spot
+      final ImageView monster =
+         (ImageView) layoutInflater.inflate(R.layout.untouched, null);
+      
+      
+      monsters.add(monster); // add the new spot to our list of spots
+      relativeLayout.addView(monster); // add spot to the screen
+      
+      
+      monster.setLayoutParams(new RelativeLayout.LayoutParams(
+         MONSTER_DIAMETER, MONSTER_DIAMETER));      
+      
+      monster.setImageResource(R.drawable.cthulu);	  
+      
+      monster.setOnClickListener( // listens for spot being clicked
+         new OnClickListener()
+         {            
+            public void onClick(View v)
+            {
+               touchedMonster(monster); // handle touched spot
+            } 
+         }
+      );       
+      
+	  monster.setX(x); // set spot's starting x location
+	  monster.setY(y); // set spot's starting y location
+	  monster.setScaleX(MONSTER_SCALE_X_START);
+	  monster.setScaleY(MOSNTER_SCALE_Y_START);
+
+	  monster.animate().scaleX(MONSTER_SCALE_X).scaleY(MONSTER_SCALE_Y).setDuration(MONSTER_ARRIVE_ANIMATION_DURATION)
+     	.setListener(new MonsterAnimatorListenerAdapter(monster)); 
       
       
    } // end addNewSpot method
-
-   // called when the user touches the screen, but not a spot
-   @Override
-   public boolean onTouchEvent(MotionEvent event)
-   {
-      // play the missed sound
-      if (soundPool != null)
-         soundPool.play(MISS_SOUND_ID, volume, volume, 
-            SOUND_PRIORITY, 0, 1f);
-      
-      score -= 15 * level; // remove some points
-      score = Math.max(score, 0); // do not let the score go below zero
-      displayScores(); // update scores/level on screen
-      return true;
-   } // end method onTouchEvent
    
-   class SpotAnimatorListenerAdapter extends AnimatorListenerAdapter
+   // Add and remove animator from the animators list
+   class MonsterAnimatorListenerAdapter extends AnimatorListenerAdapter
    {
-	  ImageView spot;
+	  ImageView monster;
 	  
-	  public SpotAnimatorListenerAdapter(ImageView spot)
+	  public MonsterAnimatorListenerAdapter(ImageView spot)
 	  {
-		  this.spot = spot;
+		  this.monster = spot;
 	  }
 	   
       @Override
@@ -378,57 +360,95 @@ public class GameProjectView extends View
 
       public void onAnimationEnd(Animator animation)
       {
-         animators.remove(animation); // animation done, remove
-         
-         if (!gamePaused && spots.contains(spot)) // not touched
-         {
-            missedSpot(spot); // lose a life
-         } // end if
-      } // end method onAnimationEnd
-   } // end AnimatorListenerAdapter
+         animators.remove(animation);   
+      } 
+   } 
    
-   // called when a spot is touched
-   private void touchedSpot(ImageView spot)
+   class FireballAnimatorListenerAdapter extends AnimatorListenerAdapter
    {
-      relativeLayout.removeView(spot); // remove touched spot from screen 
-     spots.remove(spot); // remove old spot from list           
-//	   spot.animate().x(20).y(20).setDuration(animationTime).setListener(
-//			   new SpotAnimatorListenerAdapter(spot)); // end call to setListener
+		  ImageView fireball;
+		  
+		  public FireballAnimatorListenerAdapter(ImageView fireball)
+		  {
+			  this.fireball = fireball;
+		  }
+		   
+	      @Override
+	      public void onAnimationStart(Animator animation)
+	      {
+	         animators.add(animation); // save for possible cancel
+	      } // end method onAnimationStart
+
+	      public void onAnimationEnd(Animator animation)
+	      {
+	         animators.remove(animation);   
+	         images.remove(fireball);
+	         relativeLayout.removeView(fireball);	 
+	         
+	         if(monsterHealth - FIREBALL_DAMAGE <= 0)
+		  	   {
+		  		   monsters.clear();
+		  		   relativeLayout.removeAllViews();
+		  		   monsterHealth = 0;	  
+		  	   }
+		  	   else
+		  		   monsterHealth -= FIREBALL_DAMAGE;
+	  	   
+	  	   	displayScores();
+	      } 	   
+   }
+   
+   private void damageMonster(ImageView monster, int damage)
+   {
+	   
+   }
+
+   // called when the user touches the screen, but not a spot
+   @Override
+   public boolean onTouchEvent(MotionEvent event)
+   {
+      // play the missed sound
+//      if (soundPool != null)
+//         soundPool.play(MISS_SOUND_ID, volume, volume, 
+//            SOUND_PRIORITY, 0, 1f);
       
-
-//      ++spotsTouched; // increment the number of spots touched
-//      score += 10 * level; // increment the score
-
-      // play the hit sounds
-      if (soundPool != null)
-         soundPool.play(HIT_SOUND_ID, volume, volume, 
-            SOUND_PRIORITY, 0, 1f);
-
-//      // increment level if player touched 10 spots in the current level
-//      if (spotsTouched % NEW_LEVEL == 0)
-//      {
-//         ++level; // increment the level
-//         animationTime *= 0.95; // make game 5% faster than prior level
-//
-//         // if the maximum number of lives has not been reached
-//         if (livesLinearLayout.getChildCount() < MAX_LIVES)
-//         {
-//            ImageView life = 
-//               (ImageView) layoutInflater.inflate(R.layout.life, null);
-//            livesLinearLayout.addView(life); // add life to screen
-//         } // end if
-//      } // end if
- 
-      displayScores(); // update score/level on the screen
+      // Add a monster if there are none
+	  if(monsters.isEmpty())
+		  spotHandler.post(addMonsterRunnable);
       
-//      if (!gameOver)
-//         addNewSpot(); // add another untouched spot
-   } // end method touchedSpot
+      
+      return true;
+   } // end method onTouchEvent
+   
+   
+   
+   // Called when a monster is touched.
+   private void touchedMonster(ImageView monster)
+   {		   
+	   // Only respond to touches if all the animations are finished.
+	   if(animators.isEmpty())
+	   {	   
+		   spotHandler.post(addFireballRunnable);
+		   
+	       damageMonster(monster, FIREBALL_DAMAGE);
+		   
+		   //relativeLayout.removeView(spot); // remove touched spot from screen 
+		   //images.remove(spot); // remove old spot from list  
+	      
+	      // play the hit sounds
+	      if (soundPool != null)
+	         soundPool.play(HIT_SOUND_ID, volume, volume, 
+	            SOUND_PRIORITY, 0, 1f);
+	 
+	      displayScores(); // update score/level on the screen
+	   }      
+   } 
+   
 
    // called when a spot finishes its animation without being touched
    public void missedSpot(ImageView spot)
    {      
-      spots.remove(spot); // remove spot from spots List
+      images.remove(spot); // remove spot from spots List
       relativeLayout.removeView(spot); // remove spot from screen
       
       if (gameOver) // if the game is already over, exit
@@ -478,7 +498,7 @@ public class GameProjectView extends View
       {
          livesLinearLayout.removeViewAt( // remove life from screen
             livesLinearLayout.getChildCount() - 1); 
-         addNewSpot(); // add another spot to game
+         addNewMonster(); // add another spot to game
       } // end else
    } // end method missedSpot
 } // end class SpotOnView
