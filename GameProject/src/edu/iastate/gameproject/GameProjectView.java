@@ -73,7 +73,7 @@ public class GameProjectView extends View
    private static final float FIREBALL_SCALE_Y = .25f; // end animation y scale
    private static final float FIREBALL_SCALE_X_START = 2.00f; // beginning animation x scale
    private static final float FIREBALL_SCALE_Y_START = 2.00f; // beginning animation y scale
-   private static final int FIREBALL_DAMAGE = 100; // the amount of damage a fireball does
+   private static final int FIREBALL_DAMAGE = 50; // the amount of damage a fireball does
    
    private float targetX; // where the mouse was clicked X
    private float targetY; // where the mouse was clicked Y
