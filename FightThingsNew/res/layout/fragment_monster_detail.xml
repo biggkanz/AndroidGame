@@ -1,10 +1,44 @@
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- <TextView xmlns:android="http://schemas.android.com/apk/res/android" -->
+<!--     xmlns:tools="http://schemas.android.com/tools" -->
+<!--     android:id="@+id/monster_detail" -->
+<!--     style="?android:attr/textAppearanceLarge" -->
+<!--     android:layout_width="match_parent" -->
+<!--     android:layout_height="match_parent" -->
+<!--     android:padding="16dp" -->
+<!--     android:textIsSelectable="true" -->
+<!--     tools:context=".MonsterDetailFragment" /> -->
+
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/monster_detail"
-    style="?android:attr/textAppearanceLarge"
+    android:id="@+id/monster_detail_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:textIsSelectable="true"
-    tools:context=".MonsterDetailFragment" />
+    android:orientation="vertical"
+    tools:context=".MonsterDetailFragment"
+    tools:ignore="MergeRootFrame" >
+    
+	<TextView 
+		 android:id="@+id/name"
+		 style="?android:attr/textAppearanceLarge"
+		 android:layout_width="match_parent"
+		 android:layout_height="wrap_content"
+		 android:padding="16dp"
+		 android:textIsSelectable="true" />
+    
+	<TextView 
+		android:id="@+id/health"
+		style="?android:attr/textAppearanceLarge"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:padding="16dp"
+		android:textIsSelectable="true" />
 
+	<ImageView
+		android:id="@+id/imageView1"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:gravity="bottom"
+		android:contentDescription=""
+		android:src="@drawable/m_seamonster"  />
+</LinearLayout>

@@ -1,8 +1,6 @@
 package edu.iastate.fightthings;
 
-import edu.iastate.fightthings.data.DatabaseConnector;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 

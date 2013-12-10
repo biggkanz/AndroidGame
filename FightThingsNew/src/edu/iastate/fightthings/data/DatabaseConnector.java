@@ -2,18 +2,17 @@
 // Provides easy connection and creation of Usermonsters database.
 package edu.iastate.fightthings.data;
 
+import edu.iastate.fightthings.R;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseConnector 
 {
-   // database name
-   private static final String DATABASE_NAME = "Usermonsters";
    private SQLiteDatabase database; // database object
    private DatabaseOpenHelper databaseOpenHelper; // database helper
 
@@ -21,8 +20,11 @@ public class DatabaseConnector
    public DatabaseConnector(Context context) 
    {
       // create a new DatabaseOpenHelper
-      databaseOpenHelper = 
-         new DatabaseOpenHelper(context, DATABASE_NAME, null, 1);
+	
+      databaseOpenHelper = new DatabaseOpenHelper(
+    		  context, 
+    		  context.getString(R.string.database_name),
+    		  null, 1);
    } // end DatabaseConnector constructor
 
    // open the database connection
@@ -42,30 +44,27 @@ public class DatabaseConnector
    // inserts a new contact in the database
    public void insertMonster(String name, String image, String health)
    {
-      ContentValues newContact = new ContentValues();
-      newContact.put("name", name);
-      newContact.put("image", image);
-      newContact.put("health", health);
-
-      open(); // open the database
-      database.insert("monsters", null, newContact);
-      //close(); // close the database
+	  ContentValues newContact = new ContentValues();
+	  newContact.put("name", name);
+	  newContact.put("image", image);
+	  newContact.put("health", health);
+	
+	  open(); // open the database
+	  database.insert("monsters", null, newContact);
+	  //close(); // close the database
    } // end method insertContact
 
    // inserts a new contact in the database
-   public void updateContact(long id, String name, String email, 
-      String phone, String state, String city) 
+   public void updateMonster(long id, String name, String image, String health)
    {
-      ContentValues editContact = new ContentValues();
-      editContact.put("name", name);
-      editContact.put("email", email);
-      editContact.put("phone", phone);
-      editContact.put("street", state);
-      editContact.put("city", city);
+		ContentValues editContact = new ContentValues();
+		editContact.put("name", name);
+		editContact.put("image", image);
+		editContact.put("health", health);
 
-      open(); // open the database
-      database.update("monsters", editContact, "_id=" + id, null);
-      close(); // close the database
+		open(); // open the database
+		database.update("monsters", editContact, "_id=" + id, null);
+	    //close(); // close the database
    } // end method updateContact
    
    public Cursor getMonsters() 
