@@ -33,12 +33,23 @@
 		android:layout_height="wrap_content"
 		android:padding="16dp"
 		android:textIsSelectable="true" />
+	
+	<Button
+	    android:id="@+id/fightButton"
+	    style="?android:attr/buttonStyleSmall"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:padding="16dp"
+	    android:text="Fight" />
 
 	<ImageView
 		android:id="@+id/imageView1"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
 		android:gravity="bottom"
-		android:contentDescription=""
+		android:contentDescription="Monster"
 		android:src="@drawable/m_seamonster"  />
+
+
+
 </LinearLayout>

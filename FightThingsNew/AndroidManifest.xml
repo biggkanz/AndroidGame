@@ -30,6 +30,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MonsterListActivity" />
         </activity>
+        <activity
+            android:name="edu.iastate.fightthings.game.GameProject"
+            android:label="Game" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MonsterDetailFragment" />
+        </activity>
     </application>
 
 </manifest>

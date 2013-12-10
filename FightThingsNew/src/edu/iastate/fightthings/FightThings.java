@@ -9,6 +9,12 @@ import android.content.ContextWrapper;
 
 public class FightThings extends Application 
 {
+	
+	public FightThings()
+	{ 
+		super();
+	}
+	
 	@Override
 	public void onCreate()
 	{
@@ -23,6 +29,7 @@ public class FightThings extends Application
 		}
 		
 	}
+	
 	
 	private static boolean databaseExists(ContextWrapper context, String dbName) 
 	{
