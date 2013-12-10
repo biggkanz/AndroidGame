@@ -14,6 +14,7 @@ import edu.iastate.fightthings.MonsterDetailFragment;
 import edu.iastate.fightthings.R;
 import edu.iastate.fightthings.R.drawable;
 import edu.iastate.fightthings.data.MonsterContent;
+import edu.iastate.fightthings.data.TopscoreContent;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -36,6 +37,7 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -414,35 +416,25 @@ public class GameProjectView extends Fragment
 
    // called when a spot finishes its animation without being touched
    public void gameOver()
-   {      
-//      // if the game has been lost
-//      if (livesLinearLayout.getChildCount() == 0)
-//      {          
-//         // display a high score dialog
-//         Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-//         dialogBuilder.setTitle(R.string.game_over);
-//         dialogBuilder.setMessage(getResources().getString(R.string.game_killed) +
-//            " " + playerHealth);
-//         dialogBuilder.setPositiveButton(R.string.reset_game,
-//            new DialogInterface.OnClickListener()
-//            {
-//               public void onClick(DialogInterface dialog, int which)
-//               { 
-//                  displayScores(); // ensure that score is up to date
-//                  dialogDisplayed = false;
-//                  resetGame(); // start a new game
-//               } // end method onClick
-//            } // end DialogInterface
-//         ); // end call to dialogBuilder.setPositiveButton
-//         dialogDisplayed = true;
-//         dialogBuilder.show(); // display the reset game dialog
-//      } // end if
-//      else // remove one life   
-//      {
-//         livesLinearLayout.removeViewAt( // remove life from screen
-//            livesLinearLayout.getChildCount() - 1); 
-//         addNewMonster(); // add another spot to game
-//      } // end else
-   } // end method missedSpot
-} // end class SpotOnView
+   {           
+		
+	TopscoreContent.setContext(getActivity());
+	   
+	 Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+	 dialogBuilder.setTitle("Top Scores");
+	 dialogBuilder.setAdapter(new ArrayAdapter<TopscoreContent.TopscoreItem>(getActivity(),
+				android.R.layout.simple_list_item_activated_1,
+				android.R.id.text1, TopscoreContent.ITEMS), null);
+	 dialogBuilder.setPositiveButton(R.string.reset_game,
+	    new DialogInterface.OnClickListener()
+	    {
+	       public void onClick(DialogInterface dialog, int which)
+	       { 
+	    	  getFragmentManager().popBackStackImmediate(); 
+	       } 
+	    } 
+	 ); 
+	 dialogBuilder.show(); 
+   }
+} 
 

@@ -2,9 +2,6 @@ package edu.iastate.fightthings;
 
 import java.lang.reflect.Field;
 
-import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -17,9 +14,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.iastate.fightthings.R.drawable;
-import edu.iastate.fightthings.R.id;
 import edu.iastate.fightthings.data.MonsterContent;
-import edu.iastate.fightthings.game.GameProject;
 import edu.iastate.fightthings.game.GameProjectView;
 
 public class MonsterDetailFragment extends Fragment 

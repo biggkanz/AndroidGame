@@ -40,6 +40,24 @@ public class DatabaseConnector
       if (database != null)
          database.close(); // close the database connection
    } // end method close
+   
+   // inserts a new contact in the database
+   public void insertTopscore(String name, int score)
+   {
+	  ContentValues newTopscore = new ContentValues();
+	  newTopscore.put("name", name);
+	  newTopscore.put("score", score);
+	
+	  open(); // open the database
+	  database.insert("topscores", null, newTopscore);
+	  //close(); // close the database
+   } // end method insertContact
+   
+   public Cursor getTopscores() 
+   {
+	      return database.query("topscores", new String[] {"_id", "name", "score"}, 
+	    	         null, null, null, null, "score DESC");
+   }
 
    // inserts a new contact in the database
    public void insertMonster(String name, String image, String health)
@@ -79,8 +97,7 @@ public class DatabaseConnector
    {
       return database.query(
          "monsters", null, "_id=" + id, null, null, null, null);
-   } // end method getOnContact
-   
+   } // end method getOnContact   
 
    // delete the contact specified by the given String name
    public void deleteContact(long id) 
@@ -99,34 +116,38 @@ public class DatabaseConnector
          super(context, name, factory, version);
       } // end DatabaseOpenHelper constructor
 
-      // creates the monsters table when the database is created
+      
       @Override
       public void onCreate(SQLiteDatabase db) 
-      { 
-          //open(); // open the database
-    	  
+      {
          // query to create a new table named monsters
-         String createQuery = "CREATE TABLE monsters" +
+         String createMonstersTable = "CREATE TABLE monsters" +
             "(_id integer primary key autoincrement," +
             "name TEXT, image TEXT, health TEXT);";
                   
-         db.execSQL(createQuery); // execute the query
+         db.execSQL(createMonstersTable); // execute the query
          
-      } // end method onCreate
+         String createTopscoresTable = "CREATE TABLE topscores" +
+                 "(_id integer primary key autoincrement," +
+                 "name TEXT, score INT);";
+         
+         db.execSQL(createTopscoresTable);
+         
+      }
 
       @Override
       public void onUpgrade(SQLiteDatabase db, int oldVersion, 
           int newVersion) 
       {
-      } // end method onUpgrade
-   } // end class DatabaseOpenHelper
+      } 
+   } 
 
-public boolean isOpen() 
-{	
-	if (database != null)
-		return true;
-	else
-		return false;
-}
+	public boolean isOpen() 
+	{	
+		if (database != null)
+			return true;
+		else
+			return false;
+	}
 
-} // end class DatabaseConnector
+} 

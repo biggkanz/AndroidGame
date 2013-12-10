@@ -9,6 +9,7 @@ import android.content.ContextWrapper;
 
 public class FightThings extends Application 
 {
+	public int kills = 0;
 	
 	public FightThings()
 	{ 
@@ -26,6 +27,10 @@ public class FightThings extends Application
 			db.insertMonster("Sea Monster", "m_seamonster", "50");
 			db.insertMonster("Cthulu", "m_cthulu", "150");
 			db.insertMonster("Old One", "m_oldone", "100");
+			
+			db.insertTopscore("Biggs", 5);
+			db.insertTopscore("Player1", 7);
+			db.insertTopscore("Player2", 1);
 		}
 		
 	}
