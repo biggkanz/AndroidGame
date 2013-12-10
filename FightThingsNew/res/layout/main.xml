@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+   android:id="@+id/relativeLayout" 
+   android:layout_width="match_parent"
+   android:layout_height="match_parent" 
+   android:background="@android:color/black">
+   
+   <TextView
+       android:id="@+id/monsterNameTextView"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_marginLeft="10dp"
+       android:layout_marginTop="10dp"
+       android:text=""
+       android:textColor="#808080"
+       android:textSize="25sp" >
+</TextView>
+
+   <TextView
+       android:id="@+id/killedTextView"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_alignParentRight="true"
+       android:layout_marginRight="10dp"
+       android:layout_marginTop="10dp"
+       android:layout_toRightOf="@id/monsterNameTextView"
+       android:gravity="right"
+       android:text="@string/game_killed"
+       android:textColor="#808080"
+       android:textSize="25sp" >
+</TextView>
+
+   <TextView
+       android:id="@+id/monsterHealthTextView"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_below="@id/monsterNameTextView"
+       android:layout_marginLeft="10dp"
+       android:text="@string/game_monster_health"
+       android:textColor="#808080"
+       android:textSize="25sp" >
+</TextView>   
+</RelativeLayout >

@@ -3,11 +3,17 @@
 // EDITED FOR PROJECT!
 package edu.iastate.fightthings.game;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Queue;
+
+import edu.iastate.fightthings.MonsterDetailFragment;
+import edu.iastate.fightthings.R;
+import edu.iastate.fightthings.R.drawable;
+import edu.iastate.fightthings.data.MonsterContent;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -19,46 +25,42 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-public class GameProjectView extends View 
+public class GameProjectView extends Fragment
 {
-   // variables for managing the game
-   private int playerHealth;
    private int monsterHealth;
    
    private int viewWidth; // stores the width of this View
    private int viewHeight; // stores the height of this view
-//   private boolean gameOver; // whether the game has ended
-   private boolean gamePaused; // whether the game has ended
-   private boolean dialogDisplayed; // whether the game has ended
-//   private int highScore; // the game's all time high score
-//   
-   // collections of spots (ImageViews) and Animators 
+   
    private final Queue<ImageView> monsters = new ConcurrentLinkedQueue<ImageView>();
    private final Queue<ImageView> images = new ConcurrentLinkedQueue<ImageView>(); 
    private final Queue<Animator> animators =  new ConcurrentLinkedQueue<Animator>(); 
    
-   private TextView monsterHealthTextView; // displays high score
-   private TextView playerHealthTextView; // displays current score
-   private TextView levelTextView; // displays current level
-   private LinearLayout livesLinearLayout; // displays lives remaining
+   private TextView monsterNameTextView; // displays high score
+   private TextView monsterHealthTextView; // displays current score
+   private TextView killedTextView; // displays current level
    private RelativeLayout relativeLayout; // displays spots
-   private Resources resources; // used to load resources
    private LayoutInflater layoutInflater; // used to inflate GUIs
 
    // time in milliseconds for animations
    private static final int MONSTER_ARRIVE_ANIMATION_DURATION = 2000;
    private static final int FIREBALL_ANIMATION_DURATION = 500;   
-   
-   private static final Random random = new Random(); // for random coords
    
    private static final float FIREBALL_SCALE_X = .25f; // end animation x scale
    private static final float FIREBALL_SCALE_Y = .25f; // end animation y scale
@@ -69,7 +71,6 @@ public class GameProjectView extends View
    private float targetX; // where the mouse was clicked X
    private float targetY; // where the mouse was clicked Y
    private boolean monsterWasHit;
-   
    
    private static final int MONSTER_DIAMETER = 100; // size of monster for detecting touch events
    private static final float MONSTER_SCALE_X = 4.00f; // end animation x scale
@@ -90,44 +91,50 @@ public class GameProjectView extends View
    private int volume; // sound effect volume
    private Map<Integer, Integer> soundMap; // maps ID to soundpool
    
-   public GameProjectView(
-		   Context context, 
-		   SharedPreferences sharedPreferences,
-		   RelativeLayout parentLayout)
-   {
-      super(context);
-      
-      monsterHealth = 100;
-      playerHealth = 100;
-      
-      // save Resources for loading external values
-      resources = context.getResources();
-
-      // save LayoutInflater
-      layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-      // get references to various GUI components
-      relativeLayout = parentLayout;
-      livesLinearLayout = (LinearLayout) relativeLayout.findViewById(R.id.lifeLinearLayout); 
-      monsterHealthTextView = (TextView) relativeLayout.findViewById(R.id.highScoreTextView);
-      playerHealthTextView = (TextView) relativeLayout.findViewById(R.id.scoreTextView);
-      levelTextView = (TextView) relativeLayout.findViewById(R.id.levelTextView);
-
-      spotHandler = new Handler(); // used to add spots when game starts
-   } // end SpotOnView constructor
-
-   // store SpotOnView's width/height
+   public static final String ARG_ITEM_ID = "item_id";
+   private MonsterContent.MonsterItem mItem;
+   
+   public GameProjectView()
+   {   }
+   
    @Override
-   protected void onSizeChanged(int width, int height, int oldw, int oldh)
-   {
-      viewWidth = width; // save the new width
-      viewHeight = height; // save the new height
-   } // end method onSizeChanged
+	public void onCreate(Bundle savedInstanceState) 
+	{
+		super.onCreate(savedInstanceState);
+
+		if (getArguments().containsKey(ARG_ITEM_ID)) 
+		{
+			mItem = MonsterContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
+		}
+	}
+   
+   @Override
+   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) 
+   {  
+	   View rootView = inflater.inflate(R.layout.main, container, false);
+	   
+		monsterNameTextView = ((TextView) rootView.findViewById(R.id.monsterNameTextView));
+		monsterHealthTextView = ((TextView) rootView.findViewById(R.id.monsterHealthTextView));
+		relativeLayout = ((RelativeLayout) rootView.findViewById(R.id.relativeLayout));
+		killedTextView = ((TextView) rootView.findViewById(R.id.killedTextView));
+	   
+		monsterHealth = 100;
+	      
+		// save LayoutInflater
+		layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+		spotHandler = new Handler(); // used to add spots when game starts
+		
+		rootView.setOnTouchListener(onTouchListener);
+		
+		initializeSoundEffects(getActivity());
+	      
+		return rootView;
+   }
 
    // called by the SpotOn Activity when it receives a call to onPause
    public void pause()
    {
-      gamePaused = true;
       soundPool.release(); // release audio resources
       soundPool = null;
       cancelAnimations(); // cancel all outstanding animations
@@ -156,27 +163,7 @@ public class GameProjectView extends View
       images.clear();
    } // end method cancelAnimations
    
-   // called by the SpotOn Activity when it receives a call to onResume
-   public void resume(Context context)
-   {
-      gamePaused = false;
-      initializeSoundEffects(context); // initialize app's SoundPool
-
-      if (!dialogDisplayed)
-         resetGame(); // start the game
-   } // end method resume
-
-   // start a new game
-   public void resetGame()
-   {
-	  monsterHealth = 100;
-	   
-	  images.clear(); // empty the List of spots
-	  animators.clear(); // empty the List of Animators
-	  livesLinearLayout.removeAllViews(); // clear old lives from screen
-	  displayScores(); // display scores and level            
-   } 
-
+   
    // create the app's SoundPool for playing game audio
    private void initializeSoundEffects(Context context)
    {
@@ -200,9 +187,9 @@ public class GameProjectView extends View
    private void displayScores()
    {
       // display the high score, current score and level
-      monsterHealthTextView.setText(resources.getString(R.string.monster_health) + " " + monsterHealth);
-      playerHealthTextView.setText(resources.getString(R.string.player_health) + " " + playerHealth);
-      levelTextView.setText(resources.getString(R.string.level) + " " + "1");
+      monsterNameTextView.setText(mItem.name);
+      monsterHealthTextView.setText(getResources().getString(R.string.game_monster_health) + monsterHealth);
+      killedTextView.setText(getResources().getString(R.string.game_killed) + " " + "1");
    } // end function displayScores
 
    // Runnable used to add new spots to the game at the start
@@ -236,7 +223,7 @@ public class GameProjectView extends View
             
       fireball.setLayoutParams(new RelativeLayout.LayoutParams(MONSTER_DIAMETER, MONSTER_DIAMETER));      
       
-      fireball.setImageResource(R.drawable.fireball);	 	      
+      fireball.setImageResource(R.drawable.ic_launcher); 	      
       
       // fireball starts at bottom center of the screen
 	  fireball.setX(viewWidth / 2); // set spot's starting x location
@@ -256,7 +243,10 @@ public class GameProjectView extends View
    }
    
    public void addNewMonster()
-   {      
+   {
+	   viewWidth = this.getView().getWidth();
+	   viewHeight = this.getView().getHeight();
+	   
       int x = viewWidth / 2 - MONSTER_DIAMETER / 2;
       int y = viewHeight / 2 - MONSTER_DIAMETER / 2;
       
@@ -270,8 +260,19 @@ public class GameProjectView extends View
       
       monster.setLayoutParams(new RelativeLayout.LayoutParams(MONSTER_DIAMETER, MONSTER_DIAMETER));      
       
-      monster.setImageResource(
+		try 
+		{
+		    Class<drawable> res = R.drawable.class;
+		    Field field = res.getField(mItem.image);
+		    int drawableId = field.getInt(null);
+		    
+		    monster.setImageDrawable(getResources().getDrawable(drawableId));
+		}
+		catch (Exception e) {
+		    Log.e("MonsterDetail", "Failure to get drawable id from imagename in database.", e);
+		}	
       
+      monsterHealth = Integer.parseInt(mItem.health);
       monster.setOnClickListener( // listens for spot being clicked
          new OnClickListener()
          {            
@@ -292,6 +293,8 @@ public class GameProjectView extends View
 	  .scaleY(MONSTER_SCALE_Y)
 	  .setDuration(MONSTER_ARRIVE_ANIMATION_DURATION)
 	  .setListener(new MonsterAnimatorListenerAdapter(monster)); 
+	  
+	  displayScores();
             
    } // end addNewSpot method
    
@@ -368,27 +371,30 @@ public class GameProjectView extends View
 	     }
 	  } 	   
    }   
+   
+	private OnTouchListener onTouchListener = new OnTouchListener()
+	{
 
-   // called when the user touches the screen, but not a spot
-   @Override
-   public boolean onTouchEvent(MotionEvent event)
-   {
-	  if(animators.isEmpty())
-	  {
-	      // Add a monster if there are none
-		  if(monsters.isEmpty())
-			  spotHandler.post(addMonsterRunnable);
-		  else
-		  {
-			  targetX = event.getX();
-			  targetY = event.getY();
+		@Override
+		public boolean onTouch(View v, MotionEvent event) 
+		{
+			  if(animators.isEmpty())
+			  {
+			      // Add a monster if there are none
+				  if(monsters.isEmpty())
+					  spotHandler.post(addMonsterRunnable);
+				  else
+				  {
+					  targetX = event.getX();
+					  targetY = event.getY();
+					  
+					  spotHandler.post(addFireballRunnable);		  
+				  }
+			  }      
 			  
-			  spotHandler.post(addFireballRunnable);		  
-		  }
-	  }      
-	  
-	  return true;
-   } 
+			  return true;
+		} 
+	   }; 
    
    // Called when a monster is touched.
    private void touchedMonster(ImageView monster)
@@ -409,34 +415,34 @@ public class GameProjectView extends View
    // called when a spot finishes its animation without being touched
    public void gameOver()
    {      
-      // if the game has been lost
-      if (livesLinearLayout.getChildCount() == 0)
-      {          
-         // display a high score dialog
-         Builder dialogBuilder = new AlertDialog.Builder(getContext());
-         dialogBuilder.setTitle(R.string.game_over);
-         dialogBuilder.setMessage(resources.getString(R.string.score) +
-            " " + playerHealth);
-         dialogBuilder.setPositiveButton(R.string.reset_game,
-            new DialogInterface.OnClickListener()
-            {
-               public void onClick(DialogInterface dialog, int which)
-               { 
-                  displayScores(); // ensure that score is up to date
-                  dialogDisplayed = false;
-                  resetGame(); // start a new game
-               } // end method onClick
-            } // end DialogInterface
-         ); // end call to dialogBuilder.setPositiveButton
-         dialogDisplayed = true;
-         dialogBuilder.show(); // display the reset game dialog
-      } // end if
-      else // remove one life   
-      {
-         livesLinearLayout.removeViewAt( // remove life from screen
-            livesLinearLayout.getChildCount() - 1); 
-         addNewMonster(); // add another spot to game
-      } // end else
+//      // if the game has been lost
+//      if (livesLinearLayout.getChildCount() == 0)
+//      {          
+//         // display a high score dialog
+//         Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+//         dialogBuilder.setTitle(R.string.game_over);
+//         dialogBuilder.setMessage(getResources().getString(R.string.game_killed) +
+//            " " + playerHealth);
+//         dialogBuilder.setPositiveButton(R.string.reset_game,
+//            new DialogInterface.OnClickListener()
+//            {
+//               public void onClick(DialogInterface dialog, int which)
+//               { 
+//                  displayScores(); // ensure that score is up to date
+//                  dialogDisplayed = false;
+//                  resetGame(); // start a new game
+//               } // end method onClick
+//            } // end DialogInterface
+//         ); // end call to dialogBuilder.setPositiveButton
+//         dialogDisplayed = true;
+//         dialogBuilder.show(); // display the reset game dialog
+//      } // end if
+//      else // remove one life   
+//      {
+//         livesLinearLayout.removeViewAt( // remove life from screen
+//            livesLinearLayout.getChildCount() - 1); 
+//         addNewMonster(); // add another spot to game
+//      } // end else
    } // end method missedSpot
 } // end class SpotOnView
 
