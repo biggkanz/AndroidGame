@@ -5,7 +5,7 @@
     <string name="title_monster_detail">Monster Detail</string>
     <string name="database_name">FightThings</string>
     <string name="game_monster_name">Monster Name: </string>
-    <string name="game_monster_health">Monster Health:</string>
+    <string name="game_monster_health">Monster Health: </string>
     <string name="game_killed">Kills: </string>
     <string name="game_over">Game Over</string>
     <string name="reset_game">Reset</string>

@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,8 +20,10 @@ import edu.iastate.fightthings.R.drawable;
 import edu.iastate.fightthings.R.id;
 import edu.iastate.fightthings.data.MonsterContent;
 import edu.iastate.fightthings.game.GameProject;
+import edu.iastate.fightthings.game.GameProjectView;
 
-public class MonsterDetailFragment extends Fragment {
+public class MonsterDetailFragment extends Fragment 
+{
 
 	public static final String ARG_ITEM_ID = "item_id";
 
@@ -30,7 +33,8 @@ public class MonsterDetailFragment extends Fragment {
 	}
 
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	public void onCreate(Bundle savedInstanceState) 
+	{
 		super.onCreate(savedInstanceState);
 
 		if (getArguments().containsKey(ARG_ITEM_ID)) {
@@ -79,17 +83,20 @@ public class MonsterDetailFragment extends Fragment {
 		
 	      @Override
 	      public void onClick(View v)
-	      {
-//	         Intent intent = new Intent(Intent.);
-//	         intent.setType("image/*");
-//	         startActivityForResult(Intent.createChooser(intent, 
-//	            getResources().getText(R.string.chooser_image)), PICTURE_ID);
+	      { 
+	    	  Fragment newFragment = new GameProjectView();
+	    	  Bundle args = new Bundle();
+	    	  args.putString(MonsterDetailFragment.ARG_ITEM_ID, mItem.id);
 	    	  
-	         
+	    	  newFragment.setArguments(args);
 	    	  
-	    	  Intent detailIntent = new Intent(getActivity(), GameProject.class);
-				detailIntent.putExtra(MonsterDetailFragment.ARG_ITEM_ID, mItem.id);
-				startActivity(detailIntent);
-	      } // end method onClick
-	   }; // end OnClickListener addPictureButtonListener
+	    	  getFragmentManager()
+	    	    .beginTransaction()
+	    	    .replace(getId(), newFragment)
+	    	    .addToBackStack(null) // enables back key
+	    	    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE) // if you need transition
+	    	    .commit();
+
+	      } 
+	   }; 
 }
